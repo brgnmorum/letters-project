@@ -68,11 +68,14 @@ let eLetters = []; // 화면에 나타난 E들을 저장
 //----------------------------------------------------
 
 const resetBtn = document.getElementById("resetBtn");
-resetBtn.addEventListener("click", (e) => {
-    e.preventDefault(); // 스페이스나 엔터 기본 동작 막기
-    // 초기화 코드
-});
+
 function updateResetBtn(){
+    resetBtn.addEventListener("click", (e) => {
+       // 마우스 클릭만 처리
+        if (e.detail === 0) return; // detail 0이면 키보드 입력
+        e.preventDefault();
+        doReset(); 
+    });
     if(moon){ // 밤
         resetBtn.style.backgroundColor = "#ecf0f1"; 
         resetBtn.style.color = "#201b13"; 
@@ -213,12 +216,16 @@ window.addEventListener("keydown", e => {
         createE();
     }
     if(key === "O") {
-        sun = createSun();
-        bgColor = "#e9d8b9";
+        if(!sun){
+            sun = createSun();
+            bgColor = "#e9d8b9";
+        }
     }
     if(key === "C") {
-        moon = createMoon();
-        bgColor = "#2c3e50";
+        if(!moon){
+            moon = createMoon();
+            bgColor = "#2c3e50";
+        }
     }
 });
 
