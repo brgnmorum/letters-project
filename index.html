@@ -35,7 +35,7 @@ const boldFontSize = 48;
 const normalFont = `${normalFontSize}px 'Malgun Gothic', Arial, sans-serif`;
 const boldFont = `bold ${boldFontSize}px 'Malgun Gothic', Arial, sans-serif`;
 const messageBefore = "Let Your Sentence Become";
-const implementAlphabets = "Implemented: A, S, P, O, C, Z, E";
+const implementAlphabets = "Implemented: A, S, P, O, C, Z, E, Y";
 const messageBold = "NaTuRE";
 const textY = canvas.height / 5;
 
@@ -64,6 +64,9 @@ let lightnings = [];
 
 // E.
 let eLetters = []; // 화면에 나타난 E들을 저장
+
+// ❤️ Y 하트
+let hearts = []; // 화면에 나타난 하트 배열
 
 //----------------------------------------------------
 
@@ -202,6 +205,21 @@ function createE() {
     eLetters.push({x, y, size, color});
 }
 
+// ❤️ 하트 풍선 생성
+function createHeart() {
+    const colors = ["#e74c3c", "#ff6b6b", "#ff4757"];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+    
+    const size = 40 + Math.random() * 60; // 하트 크기
+    const x = Math.random() * canvas.width * 0.8 + canvas.width*0.1;
+    const y = canvas.height - size - Math.random() * 50;
+
+    const speedX = 1 + Math.random() * 2;
+    const speedY = 1 + Math.random() * 2;
+
+    hearts.push({ x, y, size, color, speedX, speedY });
+}
+
 
 //-------------------------------------------------
 
@@ -215,17 +233,15 @@ window.addEventListener("keydown", e => {
     if(e.key === "E" || e.key === "e") {
         createE();
     }
+    if(e.key.toUpperCase() === "Y") createHeart();
     if(key === "O") {
-        if(!sun){
-            sun = createSun();
-            bgColor = "#e9d8b9";
-        }
+        sun = createSun();
+        bgColor = "#e9d8b9";
     }
     if(key === "C") {
-        if(!moon){
-            moon = createMoon();
-            bgColor = "#2c3e50";
-        }
+        
+        moon = createMoon();
+        bgColor = "#2c3e50";
     }
 });
 
@@ -313,6 +329,35 @@ function drawEs() {
         ctx.fillText("E", e.x, e.y);
         ctx.restore();
     }
+}
+
+// ❤️ 풍선 그리기
+function drawHearts() {
+    hearts.forEach((h, index) => {
+        // 검은 줄 그리기 (풍선 줄처럼)
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(h.x, h.y - h.size * 0.5);
+        ctx.lineTo(h.x, h.y + h.size * 0.5);
+        ctx.stroke();
+
+        // 하트 그리기
+        ctx.fillStyle = h.color;
+        ctx.font = `${h.size}px Arial`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+        ctx.fillText("♥", h.x, h.y);
+
+        // 위치 이동
+        h.x -= h.speedX;
+        h.y -= h.speedY;
+
+        // 화면 밖으로 나가면 배열에서 제거
+        if(h.y + h.size < 0 || h.x + h.size < 0){
+            hearts.splice(index, 1);
+        }
+    });
 }
 
 
@@ -457,6 +502,9 @@ function animate(){
 
     // 🎈 풍선
     drawBalloons();
+
+    // 하트
+    drawHearts();
 
     // ✨ 글씨 최상위
     drawMessage();
