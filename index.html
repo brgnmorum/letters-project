@@ -175,7 +175,7 @@ function createMoon(){
     return { x: -60, y: canvas.height * 0.8, radius: 60, targetX: canvas.width * 0.8, targetY: canvas.height * 0.2, color:"#f0d25c" };
 }
 
-//Z
+//Z 번개 생성
 function createLightning() {
     const startX = Math.random() * canvas.width;
     const totalHeight = canvas.height; // 바닥까지 내려가도록
@@ -185,7 +185,7 @@ function createLightning() {
     return { startX, segments, segmentLength, color, y: 0 };
 }
 
-//E
+//E 알파벳 생성
 function createE() {
     const colors = ["#8B4513", "#A0522D", "#D2691E"]; // 갈색 계열
     const color = colors[Math.floor(Math.random() * colors.length)];
@@ -212,11 +212,11 @@ window.addEventListener("keydown", e => {
     if(e.key === "E" || e.key === "e") {
         createE();
     }
-    if(key === "O" && !isAnimatingSun && !isAnimatingMoon) {
+    if(key === "O") {
         sun = createSun();
         bgColor = "#e9d8b9";
     }
-    if(key === "C" && !isAnimatingMoon && !isAnimatingSun) {
+    if(key === "C") {
         moon = createMoon();
         bgColor = "#2c3e50";
     }
