@@ -68,6 +68,9 @@ let eLetters = []; // 화면에 나타난 E들을 저장
 // ❤️ Y 하트
 let hearts = []; // 화면에 나타난 하트 배열
 
+// U 웃는 얼굴
+let smiles = [];
+
 //----------------------------------------------------
 
 const resetBtn = document.getElementById("resetBtn");
@@ -101,6 +104,8 @@ resetBtn.addEventListener("click", () => {
     balloons = [];
     lightnings = [];
     eLetters = [];
+    hearts = [];
+    smiles = [];
 
     // 해/달 초기화
     sun = { x: canvas.width * 0.8, y: canvas.height * 0.2, radius:60, color:"#c0392b" };
@@ -212,12 +217,21 @@ function createHeart() {
     
     const size = 40 + Math.random() * 60; // 하트 크기
     const x = Math.random() * canvas.width * 0.8 + canvas.width*0.1;
-    const y = canvas.height - size - Math.random() * 50;
+    const y = canvas.height - size - Math.random() * 50 + 80;
 
     const speedX = 1 + Math.random() * 2;
     const speedY = 1 + Math.random() * 2;
 
     hearts.push({ x, y, size, color, speedX, speedY });
+}
+
+// 웃는 얼굴 생성
+function createSmile() {
+    const x = Math.random() * canvas.width * 0.8 + canvas.width*0.1;
+    const y = canvas.height * 0.3 + Math.random() * canvas.height * 0.2;
+    const color = ["#f1c40f", "#f39c12"][Math.floor(Math.random()*2)];
+    const size = 24 + Math.random() * 16;
+    smiles.push({x, y, color, size, alpha: 1, lifetime: 100});
 }
 
 
@@ -233,16 +247,16 @@ window.addEventListener("keydown", e => {
     if(e.key === "E" || e.key === "e") {
         createE();
     }
-    if(e.key.toUpperCase() === "Y") createHeart();
+    if(key === "Y") createHeart();
     if(key === "O") {
         sun = createSun();
         bgColor = "#e9d8b9";
     }
     if(key === "C") {
-        
         moon = createMoon();
         bgColor = "#2c3e50";
     }
+    if(key === "U") createSmile();
 });
 
 // 텍스트
@@ -359,6 +373,29 @@ function drawHearts() {
         }
     });
 }
+
+// 웃는 얼굴 그리
+function drawSmiles() {
+    for(let i = smiles.length - 1; i >= 0; i--){
+        const s = smiles[i];
+        ctx.font = `${s.size}px Arial`;
+        ctx.fillStyle = s.color;
+        ctx.globalAlpha = s.alpha;
+        ctx.textAlign = "center";
+        ctx.fillText(":)", s.x, s.y);
+
+        // 위로 떠오르기 + 점점 투명
+        s.y -= 1;
+        s.alpha -= 0.01;
+        s.lifetime--;
+
+        if(s.lifetime <= 0 || s.alpha <= 0){
+            smiles.splice(i,1);
+        }
+    }
+    ctx.globalAlpha = 1; // 기본값 복원
+}
+
 
 
 window.addEventListener("keydown", e => {
@@ -482,6 +519,7 @@ function animate(){
     });
 
     drawEs();
+    drawSmiles();
 
     // 🌊 물결 (서서히 밝기 변화)
     waves.forEach(w => {
