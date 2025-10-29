@@ -1,71 +1,474 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <title>Advanced Typing Example</title>
-    <style>
-      #output {
-        border: 1px solid #ccc;
-        padding: 10px;
-        min-height: 50px;
-        width: 400px;
-        font-family: monospace;
-        white-space: pre-wrap; /* 줄바꿈 유지 */
-      }
-      .letter {
-        font-size: 18px;
-        color: black;
-      }
-      .bark {
-        color: red;
-        font-weight: bold;
-      }
-    </style>
-  </head>
-  <body>
-    <h1>Type something:</h1>
-    <p>Try typing letters, BARK! for fun, or see images!</p>
-    <div id="output"></div>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>Living Letters Interactive</title>
+<style>
+  body { margin:0; overflow:hidden; }
+  canvas { display:block; }
+   #resetBtn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      padding: 10px 15px;
+      font-size: 16px;
+      z-index: 10;
+      cursor: pointer;
+      border: none;
+      border-radius: 5px;
+  }
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<button id="resetBtn">Reset</button>
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-    <script>
-      const outputEl = document.getElementById("output");
 
-      document.addEventListener("keydown", function(event) {
-        // Handle Backspace
-        if (event.key === "Backspace") {
-          const lastEl = outputEl.lastChild;
-          if (lastEl) {
-            outputEl.removeChild(lastEl);
-          }
-          return; // Backspace 처리 후 나가기
+// 🌿 텍스트
+const normalFontSize = 32;
+const boldFontSize = 48;
+const normalFont = `${normalFontSize}px 'Malgun Gothic', Arial, sans-serif`;
+const boldFont = `bold ${boldFontSize}px 'Malgun Gothic', Arial, sans-serif`;
+const messageBefore = "Let Your Sentence Become";
+const implementAlphabets = "Implemented: A, S, P, O, C, Z, E";
+const messageBold = "NaTuRE";
+const textY = canvas.height / 5;
+
+
+// 🌄 A 산
+const mountainColorsBase = ["#27ae60", "#16a085", "#1abc9c"];
+let mountains = [];
+
+// 🌊 S 물결
+const waveColorsBase = ["#6098be", "#668bd6", "#77c5ca"];
+let waves = [];
+
+// 🎈 P 풍선
+const balloonColors = ["#e74c3c","#f39c12","#9b59b6","#3498db","#f9c11a"];
+let balloons = [];
+
+// ☀️ O 키 해, 🌙 C 키 달
+let sun = { x: canvas.width * 0.8, y: canvas.height * 0.2, radius: 60, color:"#c0392b" };
+let moon = null;
+let bgColor = "#e9d8b9";
+let isAnimatingSun = false;
+let isAnimatingMoon = false;
+
+// Z 번개
+let lightnings = [];
+
+// E.
+let eLetters = []; // 화면에 나타난 E들을 저장
+
+//----------------------------------------------------
+
+const resetBtn = document.getElementById("resetBtn");
+resetBtn.addEventListener("click", (e) => {
+    e.preventDefault(); // 스페이스나 엔터 기본 동작 막기
+    // 초기화 코드
+});
+function updateResetBtn(){
+    if(moon){ // 밤
+        resetBtn.style.backgroundColor = "#ecf0f1"; 
+        resetBtn.style.color = "#201b13"; 
+    } else {    // 낮
+        resetBtn.style.backgroundColor = "#201b13"; 
+        resetBtn.style.color = "#ecf0f1"; 
+    }
+}
+resetBtn.addEventListener("click", () => {
+    // 사용자 입력 초기화
+    userLines = [""];
+    currentLine = 0;
+
+    // 배경 초기화 (기본 낮)
+    bgColor = "#e9d8b9";
+
+    // 산, 물결, 풍선 초기화
+    mountains = [];
+    waves = [];
+    balloons = [];
+
+    // 해/달 초기화
+    sun = { x: canvas.width * 0.8, y: canvas.height * 0.2, radius:60, color:"#c0392b" };
+    moon = null;
+    isAnimatingSun = false;
+    isAnimatingMoon = false;
+
+    // 버튼 색상 업데이트
+    updateResetBtn();
+});
+updateResetBtn();
+
+// 사용자 입력
+let userLines = [""];
+let currentLine = 0;
+const inputStartY = textY + boldFontSize + 40; // NATURE 아래 조금 아래
+const lineHeight = normalFontSize + 10;
+
+// 색 밝기 조정 함수
+function adjustColorBrightness(color, amount){
+    let c = color.substring(1);
+    let num = parseInt(c,16);
+    let r = (num >> 16) + amount;
+    let g = ((num >> 8) & 0x00FF) + amount;
+    let b = (num & 0x0000FF) + amount;
+    r = Math.min(255, Math.max(0,r));
+    g = Math.min(255, Math.max(0,g));
+    b = Math.min(255, Math.max(0,b));
+    return `rgb(${r},${g},${b})`;
+}
+
+//-------------------------------------------------
+
+// 🌄 산 생성
+function createMountain(){
+    const maxBaseWidth = canvas.width / 5;
+    const baseWidth = 50 + Math.random() * maxBaseWidth;
+    const maxHeight = canvas.height - (textY + boldFontSize + 10);
+    let height = 50 + Math.random() * maxHeight;
+    const x = Math.random() * canvas.width;
+    const color = mountainColorsBase[Math.floor(Math.random() * mountainColorsBase.length)];
+    return { x, baseWidth, height, currentHeight: 0, color, currentAdjust: 0 };
+}
+
+// 🌊 물결 생성
+function createWave(){
+    const amplitude = 20 + Math.random() * 30; 
+    const wavelength = 80 + Math.random() * 100;
+    const speed = 0.5 + Math.random() * 2; 
+    const y = canvas.height * 0.95 + Math.random() * (canvas.height * 0.05);
+    const color = waveColorsBase[Math.floor(Math.random() * waveColorsBase.length)];
+    const lineWidth = 2 + Math.random() * 58;
+    return { amplitude, wavelength, speed, y, color, lineWidth, offsetX: 0, currentAdjust: 0 };
+}
+
+// 🎈 풍선 생성
+function createBalloon(){
+    const radius = 15 + Math.random() * 20;
+    const x = Math.random() * canvas.width * 0.8 + canvas.width*0.1;
+    const y = canvas.height - radius - Math.random() * 50;
+    const color = balloonColors[Math.floor(Math.random()*balloonColors.length)];
+    const speedX = 1 + Math.random()*2;
+    const speedY = 1 + Math.random()*2;
+    return {x, y, radius, color, speedX, speedY};
+}
+
+// 🌞 해 생성
+function createSun(){
+    isAnimatingSun = true;
+    moon = null;
+    return { x: -60, y: canvas.height * 0.8, radius: 60, targetX: canvas.width * 0.8, targetY: canvas.height * 0.2, color:"#c0392b" };
+}
+
+// 🌙 달 생성
+function createMoon(){
+    isAnimatingMoon = true;
+    sun = null;
+    return { x: -60, y: canvas.height * 0.8, radius: 60, targetX: canvas.width * 0.8, targetY: canvas.height * 0.2, color:"#f0d25c" };
+}
+
+//Z
+function createLightning() {
+    const startX = Math.random() * canvas.width;
+    const totalHeight = canvas.height; // 바닥까지 내려가도록
+    const segments = 10 + Math.floor(Math.random() * 10); 
+    const segmentLength = totalHeight / segments; // 세그먼트 길이 고정 → 전체 높이 = 화면 높이
+    const color = "#ffffff"; 
+    return { startX, segments, segmentLength, color, y: 0 };
+}
+
+//E
+function createE() {
+    const colors = ["#8B4513", "#A0522D", "#D2691E"]; // 갈색 계열
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
+    // 산 뒤에 위치하도록 y는 산 높이 범위 안에서 랜덤, x는 랜덤
+    const x = Math.random() * canvas.width;
+    const y = canvas.height / 2 + Math.random() * canvas.height / 4;
+
+    const size = 40 + Math.random() * 60; // 산 크기에 맞게
+
+    eLetters.push({x, y, size, color});
+}
+
+
+//-------------------------------------------------
+
+// 키보드 이벤트
+window.addEventListener("keydown", e => {
+    const key = e.key.toUpperCase();
+    if(key === "A") mountains.push(createMountain());
+    if(key === "S") waves.push(createWave());
+    if(key === "P") balloons.push(createBalloon());
+    if(key === "Z") lightnings.push(createLightning());
+    if(e.key === "E" || e.key === "e") {
+        createE();
+    }
+    if(key === "O" && !isAnimatingSun && !isAnimatingMoon) {
+        sun = createSun();
+        bgColor = "#e9d8b9";
+    }
+    if(key === "C" && !isAnimatingMoon && !isAnimatingSun) {
+        moon = createMoon();
+        bgColor = "#2c3e50";
+    }
+});
+
+// 텍스트
+function drawMessage(){
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const colorText = moon ? "#ecf0f1" : "#201b13";
+    ctx.fillStyle = colorText;
+
+    ctx.font = normalFont;
+    const beforeWidth = ctx.measureText(messageBefore).width;
+
+    ctx.font = boldFont;
+    const boldWidth = ctx.measureText(messageBold).width;
+
+    const gap = 40;
+    const totalWidth = beforeWidth + gap + boldWidth;
+    const xStart = canvas.width / 2 - totalWidth / 2;
+
+    ctx.font = normalFont;
+    ctx.fillText(messageBefore, xStart + beforeWidth/2, textY);
+    ctx.font = "16px Arial"; 
+    ctx.fillText(implementAlphabets, xStart + beforeWidth/2, textY+30);
+
+    ctx.font = boldFont;
+    ctx.fillText(messageBold, xStart + beforeWidth + gap + boldWidth/2, textY);
+}
+
+// 🎈 풍선 그리기
+function drawBalloons(){
+    balloons.forEach(b => {
+        // 동그라미
+        ctx.fillStyle = b.color;
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.radius, 0, Math.PI*2);
+        ctx.fill();
+        
+        // 검은 줄 (실선)
+        ctx.strokeStyle = "#000";
+        ctx.lineWidth = 1;  // <- 여기를 1로 고정
+        ctx.beginPath();
+        ctx.moveTo(b.x, b.y + b.radius);
+        ctx.lineTo(b.x, b.y + b.radius + b.radius*1.5);
+        ctx.stroke();
+
+        // 위치 이동
+        b.x -= b.speedX;
+        b.y -= b.speedY;
+    });
+}
+
+function drawLightnings() {
+    lightnings.forEach((lightning, index) => {
+        ctx.strokeStyle = lightning.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        let x = lightning.startX;
+        let y = 0;
+        ctx.moveTo(x, y);
+
+        for (let i = 0; i < lightning.segments; i++) {
+            x += (Math.random() - 0.5) * 20; // 지그재그
+            y += lightning.segmentLength;
+            ctx.lineTo(x, y);
         }
 
-        // 특수 키는 무시
-        if (event.key.length > 1) return;
+        ctx.stroke();
 
-        // DOM element 단위로 만들기
-        let newEl = document.createElement("span");
-        newEl.classList.add("letter");
-        newEl.textContent = event.key;
-
-        // 예시: 'b' 키를 누르면 BARK! 표시
-        if (event.key.toLowerCase() === "b") {
-          newEl.textContent = "BARK!";
-          newEl.classList.add("bark");
+        // 번개 애니메이션: y 증가 → 일정 높이 지나면 제거
+        lightning.y += 20; // 속도 조절
+        if (lightning.y > canvas.height) {
+            lightnings.splice(index, 1);
         }
+    });
+}
 
-        // 예시: 'i' 키를 누르면 고양이 이미지 추가
-        if (event.key.toLowerCase() === "i") {
-          const img = document.createElement("img");
-          img.src = "https://placekitten.com/30/30";
-          img.alt = "Kitten";
-          img.style.verticalAlign = "middle";
-          newEl = img; // 이미지로 변경
+function drawEs() {
+    for (const e of eLetters) {
+        ctx.save();
+        ctx.fillStyle = e.color;
+        ctx.font = `${e.size}px Arial`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom"; // 산 뒤에 자연스럽게
+        ctx.fillText("E", e.x, e.y);
+        ctx.restore();
+    }
+}
+
+
+window.addEventListener("keydown", e => {
+    const key = e.key;
+
+    // 일반 문자
+    if(key.length === 1 && key !== " ") {
+        const testLine = userLines[currentLine] + key;
+        ctx.font = normalFont;
+        const textWidth = ctx.measureText(testLine).width;
+        const maxWidth = canvas.width * 0.9; // 오른쪽 여백 조정
+        if(textWidth < maxWidth) userLines[currentLine] += key;
+    }
+
+    // 스페이스
+    else if(key === " ") {
+        const testLine = userLines[currentLine] + " ";
+        ctx.font = normalFont;
+        const textWidth = ctx.measureText(testLine).width;
+        const maxWidth = canvas.width * 0.9;
+        if(textWidth < maxWidth) userLines[currentLine] += " ";
+    }
+
+    // 백스페이스
+    else if(key === "Backspace") {
+        if(userLines[currentLine].length > 0) {
+            userLines[currentLine] = userLines[currentLine].slice(0, -1);
+        } else if(currentLine > 0){
+            currentLine--;
         }
+    }
 
-        // 출력 영역에 추가
-        outputEl.appendChild(newEl);
-      });
-    </script>
-  </body>
+    // 엔터
+    else if(key === "Enter") {
+        const maxLines = Math.floor((canvas.height/2 - inputStartY)/lineHeight);
+        if(userLines.length < maxLines){
+            userLines.splice(currentLine + 1, 0, "");
+            currentLine++;
+        }
+    }
+});
+
+// 입력된 글씨 그리기
+function drawUserText(){
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+    const colorText = moon ? "#ecf0f1" : "#201b13";
+    ctx.fillStyle = colorText;
+    ctx.font = normalFont;
+
+    for(let i=0; i<userLines.length; i++){
+        const y = inputStartY + i*lineHeight;
+        ctx.fillText(userLines[i], canvas.width*0.05, y);
+    }
+}
+
+// 애니메이션
+function animate(){
+    // 배경
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    // 🌞 해 / 🌙 달 (뒤 레이어)
+    if(sun){
+        if(isAnimatingSun){
+            const dx = sun.targetX - sun.x;
+            const dy = sun.targetY - sun.y;
+            if(Math.abs(dx) < 1 && Math.abs(dy) < 1){
+                sun.x = sun.targetX;
+                sun.y = sun.targetY;
+                isAnimatingSun = false;
+            } else {
+                sun.x += dx * 0.05;
+                sun.y += dy * 0.05;
+            }
+        }
+        ctx.fillStyle = sun.color;
+        ctx.beginPath();
+        ctx.arc(sun.x, sun.y, sun.radius, 0, Math.PI*2);
+        ctx.fill();
+    }
+
+    if(moon){
+        if(isAnimatingMoon){
+            const dx = moon.targetX - moon.x;
+            const dy = moon.targetY - moon.y;
+            if(Math.abs(dx) < 1 && Math.abs(dy) < 1){
+                moon.x = moon.targetX;
+                moon.y = moon.targetY;
+                isAnimatingMoon = false;
+            } else {
+                moon.x += dx * 0.05;
+                moon.y += dy * 0.05;
+            }
+        }
+        ctx.fillStyle = moon.color;
+        ctx.beginPath();
+        ctx.arc(moon.x, moon.y, moon.radius, 0, Math.PI*2);
+        ctx.fill();
+        ctx.fillStyle = bgColor;
+        ctx.beginPath();
+        ctx.arc(moon.x + 15, moon.y, moon.radius-10, 0, Math.PI*2);
+        ctx.fill();
+    }
+
+    drawLightnings();
+
+    // 🌄 산 (서서히 밝기 변화)
+    mountains.forEach(m => {
+        if(m.currentHeight < m.height) m.currentHeight += 6;
+        const targetAdjust = sun ? 10 : (moon ? -20 : 0);
+        m.currentAdjust += (targetAdjust - m.currentAdjust) * 0.05;
+
+        ctx.fillStyle = adjustColorBrightness(m.color, m.currentAdjust);
+        ctx.beginPath();
+        ctx.moveTo(m.x, canvas.height);
+        ctx.lineTo(m.x + m.baseWidth/2, canvas.height - m.currentHeight);
+        ctx.lineTo(m.x + m.baseWidth, canvas.height);
+        ctx.closePath();
+        ctx.fill();
+    });
+
+    drawEs();
+
+    // 🌊 물결 (서서히 밝기 변화)
+    waves.forEach(w => {
+        const targetAdjust = sun ? 10 : (moon ? -20 : 0);
+        w.currentAdjust += (targetAdjust - w.currentAdjust) * 0.05;
+
+        ctx.strokeStyle = adjustColorBrightness(w.color, w.currentAdjust);
+        ctx.lineWidth = w.lineWidth;
+        ctx.beginPath();
+        for(let x=0; x<=canvas.width; x++){
+            const y = w.y + w.amplitude * Math.sin((x + w.offsetX) * 2 * Math.PI / w.wavelength);
+            if(x===0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        w.offsetX += w.speed;
+    });
+
+    // 🎈 풍선
+    drawBalloons();
+
+    // ✨ 글씨 최상위
+    drawMessage();
+
+
+    // 📝 사용자 입력
+    drawUserText();
+
+    // 🌟 버튼 색상도 실시간 업데이트
+    updateResetBtn();
+
+    requestAnimationFrame(animate);
+}
+
+animate();
+
+// 리사이즈
+window.addEventListener("resize", () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+</script>
+</body>
 </html>
