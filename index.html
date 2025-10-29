@@ -402,23 +402,33 @@ window.addEventListener("keydown", e => {
     const key = e.key;
 
     // 일반 문자
-    if(key.length === 1 && key !== " ") {
-        const testLine = userLines[currentLine] + key;
+    if(key.length === 1 && key !== " "){ // 일반 문자
         ctx.font = normalFont;
-        const textWidth = ctx.measureText(testLine).width;
-        const maxWidth = canvas.width * 0.9; // 오른쪽 여백 조정
-        if(textWidth < maxWidth) userLines[currentLine] += key;
+        let testLine = userLines[currentLine] + key;
+        let textWidth = ctx.measureText(testLine).width;
+        const maxWidth = canvas.width * 0.9; // 오른쪽 여백
+        if(textWidth < maxWidth){
+            userLines[currentLine] += key;
+        } else {
+            // 자동 줄바꿈
+            userLines.splice(currentLine + 1, 0, key);
+            currentLine++;
+        }
     }
 
-    // 스페이스
-    else if(key === " ") {
-        const testLine = userLines[currentLine] + " ";
+    else if(key === " "){ // 스페이스
         ctx.font = normalFont;
-        const textWidth = ctx.measureText(testLine).width;
+        let testLine = userLines[currentLine] + " ";
+        let textWidth = ctx.measureText(testLine).width;
         const maxWidth = canvas.width * 0.9;
-        if(textWidth < maxWidth) userLines[currentLine] += " ";
+        if(textWidth < maxWidth){
+            userLines[currentLine] += " ";
+        } else {
+            userLines.splice(currentLine + 1, 0, " ");
+            currentLine++;
+        }
     }
-
+    
     // 백스페이스
     else if(key === "Backspace") {
         if(userLines[currentLine].length > 0) {
