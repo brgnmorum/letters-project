@@ -75,6 +75,7 @@ let smiles = [];
 let rainbow = { active: false, alpha: 0 };
 let rainbowTriggered = false;
 
+
 //----------------------------------------------------
 
 const resetBtn = document.getElementById("resetBtn");
@@ -282,10 +283,10 @@ function drawMessage(){
 
     const gap = 40;
     const totalWidth = beforeWidth + gap + boldWidth;
-    const margin = 60; // 화면 오른쪽 여백
+    const margin = 30; // 화면 오른쪽 여백
 
     const xRight = canvas.width - margin; // 오른쪽 기준
-    const yTop = 60; // 위쪽 여백
+    const yTop = 40; // 위쪽 여백
 
     // 첫 줄 (일반)
     ctx.font = normalFont;
@@ -416,36 +417,40 @@ function drawRainbow() {
 
     const colors = ["#c0392b","#d48825","#f0d81d","#5eb530","#308db5","#4c5698","#8d55a9"];
     const cx = canvas.width / 2;
-    const cy = canvas.height * 2;
-    const radiusBase = canvas.width * 0.9; // 살짝 줄여 안정적으로 유지
-    const gap = 40;
+    const cy = canvas.height * 2.2; // 🌈 중앙 배치
+    const radiusBase = canvas.width; // 크기 유지
 
     ctx.save();
     ctx.globalAlpha = rainbow.alpha;
 
-    for (let i = 0; i < colors.length; i++) {
-        const r = radiusBase - i * gap;
-        if (r <= 0) continue; // 💡 음수 반지름 방지
+    // 🌤️ 위에서 아래로 떨어지는 흰색 그라데이션 (무지개 뒤의 빛)
+    const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    grad.addColorStop(0, `rgba(255, 255, 255, ${rainbow.alpha * 0.8})`);
+    grad.addColorStop(0.5, `rgba(255, 255, 255, ${rainbow.alpha * 0.3})`);
+    grad.addColorStop(1, `rgba(255, 255, 255, 0)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+    // 🌈 무지개 본체
+    for (let i = 0; i < colors.length; i++) {
         ctx.beginPath();
         ctx.strokeStyle = colors[i];
         ctx.lineWidth = 40;
-        ctx.arc(cx, cy, r, Math.PI, 2 * Math.PI);
+        ctx.arc(cx, cy, radiusBase - i * 40, Math.PI, 2 * Math.PI);
         ctx.stroke();
     }
-
     ctx.restore();
 
-    // 🌈 나타나기
+    // ✨ 등장/유지/사라짐 제어
     if (rainbow.alpha < 0.6 && !rainbow.fadingOut) {
         rainbow.alpha += 0.02;
     } 
-    // 🌈 유지 시간
     else if (rainbow.alpha >= 0.6 && !rainbow.fadingOut) {
         rainbow.fadingOut = true;
-        rainbow.fadeTimer = 90;
+        rainbow.fadeTimer = 90; // 유지 시간
     }
 }
+
 
 
 
