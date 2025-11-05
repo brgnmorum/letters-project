@@ -30,8 +30,8 @@ canvas.height = window.innerHeight;
 
 
 // 🌿 텍스트
-const normalFontSize = 32;
-const boldFontSize = 48;
+const normalFontSize = 20;
+const boldFontSize = 30;
 const normalFont = `${normalFontSize}px 'Malgun Gothic', Arial, sans-serif`;
 const boldFont = `bold ${boldFontSize}px 'Malgun Gothic', Arial, sans-serif`;
 const messageBefore = "Let Your Sentence Become";
@@ -70,6 +70,9 @@ let hearts = []; // 화면에 나타난 하트 배열
 
 // U 웃는 얼굴
 let smiles = [];
+
+// NaTuRE
+let rainbow = { active: false, alpha: 0 };
 
 //----------------------------------------------------
 
@@ -121,7 +124,7 @@ updateResetBtn();
 // 사용자 입력
 let userLines = [""];
 let currentLine = 0;
-const inputStartY = textY + boldFontSize + 40; // NATURE 아래 조금 아래
+const inputStartY = canvas.height * 0.80;
 const lineHeight = normalFontSize + 10;
 
 // 색 밝기 조정 함수
@@ -136,6 +139,7 @@ function adjustColorBrightness(color, amount){
     b = Math.min(255, Math.max(0,b));
     return `rgb(${r},${g},${b})`;
 }
+
 
 //-------------------------------------------------
 
@@ -261,11 +265,12 @@ window.addEventListener("keydown", e => {
 
 // 텍스트
 function drawMessage(){
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
+    ctx.textAlign = "right"; // 오른쪽 정렬
+    ctx.textBaseline = "top";
     const colorText = moon ? "#ecf0f1" : "#201b13";
     ctx.fillStyle = colorText;
 
+    // 폰트 설정
     ctx.font = normalFont;
     const beforeWidth = ctx.measureText(messageBefore).width;
 
@@ -274,15 +279,22 @@ function drawMessage(){
 
     const gap = 40;
     const totalWidth = beforeWidth + gap + boldWidth;
-    const xStart = canvas.width / 2 - totalWidth / 2;
+    const margin = 60; // 화면 오른쪽 여백
 
+    const xRight = canvas.width - margin; // 오른쪽 기준
+    const yTop = 60; // 위쪽 여백
+
+    // 첫 줄 (일반)
     ctx.font = normalFont;
-    ctx.fillText(messageBefore, xStart + beforeWidth/2, textY);
-    ctx.font = "16px Arial"; 
-    ctx.fillText(implementAlphabets, xStart + beforeWidth/2, textY+30);
+    ctx.fillText(messageBefore, xRight - boldWidth - gap, yTop);
 
+    // 두 번째 줄 (Implemented)
+    ctx.font = "13px Arial";
+    ctx.fillText(implementAlphabets, xRight - boldWidth - gap, yTop + 30);
+
+    // 굵은 글씨
     ctx.font = boldFont;
-    ctx.fillText(messageBold, xStart + beforeWidth + gap + boldWidth/2, textY);
+    ctx.fillText(messageBold, xRight-30, yTop-5);
 }
 
 // 🎈 풍선 그리기
@@ -374,7 +386,7 @@ function drawHearts() {
     });
 }
 
-// 웃는 얼굴 그리
+// 웃는 얼굴 그리기
 function drawSmiles() {
     for(let i = smiles.length - 1; i >= 0; i--){
         const s = smiles[i];
@@ -396,7 +408,59 @@ function drawSmiles() {
     ctx.globalAlpha = 1; // 기본값 복원
 }
 
+function drawRainbow() {
+    if (!rainbow.active) return;
 
+    const colors = ["#c0392b","#d48825","#f0d81d","#5eb530","#308db5","#4c5698","#8d55a9"];
+    const cx = canvas.width / 2;
+    const cy = canvas.height * 0.9;
+    const radiusBase = canvas.width * 0.9; // 살짝 줄여 안정적으로 유지
+    const gap = 40;
+
+    ctx.save();
+    ctx.globalAlpha = rainbow.alpha;
+
+    for (let i = 0; i < colors.length; i++) {
+        const r = radiusBase - i * gap;
+        if (r <= 0) continue; // 💡 음수 반지름 방지
+
+        ctx.beginPath();
+        ctx.strokeStyle = colors[i];
+        ctx.lineWidth = 40;
+        ctx.arc(cx, cy, r, Math.PI, 2 * Math.PI);
+        ctx.stroke();
+    }
+
+    ctx.restore();
+
+    // 🌈 나타나기
+    if (rainbow.alpha < 1 && !rainbow.fadingOut) {
+        rainbow.alpha += 0.02;
+    } 
+    // 🌈 유지 시간
+    else if (rainbow.alpha >= 1 && !rainbow.fadingOut) {
+        rainbow.fadingOut = true;
+        rainbow.fadeTimer = 90;
+    }
+    // 🌈 사라지기
+    else if (rainbow.fadingOut) {
+        rainbow.fadeTimer--;
+        if (rainbow.fadeTimer <= 0) {
+            rainbow.alpha -= 0.02;
+            if (rainbow.alpha <= 0) {
+                rainbow.active = false;
+                rainbow.fadingOut = false;
+                rainbow.alpha = 0;
+            }
+        }
+    }
+}
+
+
+
+
+
+//------------------------------------------------------
 
 window.addEventListener("keydown", e => {
     const key = e.key;
@@ -423,8 +487,8 @@ window.addEventListener("keydown", e => {
         const maxWidth = canvas.width * 0.9;
         if(textWidth < maxWidth){
             userLines[currentLine] += " ";
-        } else {
-            userLines.splice(currentLine + 1, 0, " ");
+        } else if (userLines.length < 5) { // 줄 수 제한 확인
+            userLines.splice(currentLine + 1, 0, key);
             currentLine++;
         }
     }
@@ -440,11 +504,18 @@ window.addEventListener("keydown", e => {
 
     // 엔터
     else if(key === "Enter") {
-        const maxLines = Math.floor((canvas.height/2 - inputStartY)/lineHeight);
+        const maxLines = 5;
         if(userLines.length < maxLines){
             userLines.splice(currentLine + 1, 0, "");
             currentLine++;
         }
+    }
+
+    if (userLines.join("").includes("NaTuRE")) {
+    rainbow.active = true;
+    console.log("🌈 rainbow.active:", rainbow.active);
+    rainbow.alpha = 0; // 처음엔 투명
+    rainbow.fadingOut = false;
     }
 });
 
@@ -467,6 +538,7 @@ function animate(){
     // 배경
     ctx.fillStyle = bgColor;
     ctx.fillRect(0,0,canvas.width,canvas.height);
+
 
     // 🌞 해 / 🌙 달 (뒤 레이어)
     if(sun){
@@ -510,6 +582,8 @@ function animate(){
         ctx.arc(moon.x + 15, moon.y, moon.radius-10, 0, Math.PI*2);
         ctx.fill();
     }
+
+    drawRainbow();
 
     drawLightnings();
 
