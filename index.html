@@ -73,6 +73,7 @@ let smiles = [];
 
 // NaTuRE
 let rainbow = { active: false, alpha: 0 };
+let rainbowTriggered = false;
 
 //----------------------------------------------------
 
@@ -109,6 +110,8 @@ resetBtn.addEventListener("click", () => {
     eLetters = [];
     hearts = [];
     smiles = [];
+    rainbow.active = false;
+    rainbowTriggered = false;
 
     // 해/달 초기화
     sun = { x: canvas.width * 0.8, y: canvas.height * 0.2, radius:60, color:"#c0392b" };
@@ -413,7 +416,7 @@ function drawRainbow() {
 
     const colors = ["#c0392b","#d48825","#f0d81d","#5eb530","#308db5","#4c5698","#8d55a9"];
     const cx = canvas.width / 2;
-    const cy = canvas.height * 0.9;
+    const cy = canvas.height * 2;
     const radiusBase = canvas.width * 0.9; // 살짝 줄여 안정적으로 유지
     const gap = 40;
 
@@ -434,25 +437,13 @@ function drawRainbow() {
     ctx.restore();
 
     // 🌈 나타나기
-    if (rainbow.alpha < 1 && !rainbow.fadingOut) {
+    if (rainbow.alpha < 0.6 && !rainbow.fadingOut) {
         rainbow.alpha += 0.02;
     } 
     // 🌈 유지 시간
-    else if (rainbow.alpha >= 1 && !rainbow.fadingOut) {
+    else if (rainbow.alpha >= 0.6 && !rainbow.fadingOut) {
         rainbow.fadingOut = true;
         rainbow.fadeTimer = 90;
-    }
-    // 🌈 사라지기
-    else if (rainbow.fadingOut) {
-        rainbow.fadeTimer--;
-        if (rainbow.fadeTimer <= 0) {
-            rainbow.alpha -= 0.02;
-            if (rainbow.alpha <= 0) {
-                rainbow.active = false;
-                rainbow.fadingOut = false;
-                rainbow.alpha = 0;
-            }
-        }
     }
 }
 
@@ -511,11 +502,11 @@ window.addEventListener("keydown", e => {
         }
     }
 
-    if (userLines.join("").includes("NaTuRE")) {
-    rainbow.active = true;
-    console.log("🌈 rainbow.active:", rainbow.active);
-    rainbow.alpha = 0; // 처음엔 투명
-    rainbow.fadingOut = false;
+    if (!rainbowTriggered && userLines.join("").includes("NaTuRE")) {
+        rainbowTriggered = true;
+        rainbow.active = true;
+        rainbow.alpha = 0; // 처음엔 투명하게 시작
+        console.log("🌈 rainbow.active:", rainbow.active);
     }
 });
 
